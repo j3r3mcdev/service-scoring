@@ -48,3 +48,6 @@ temp/
 
 # Tests artifacts
 test-results/
+
+.npmrc
+ 
