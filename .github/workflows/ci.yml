@@ -21,6 +21,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "@j3r3mcdev:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+
       - name: Install dependencies
         run: npm ci
 
