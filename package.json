@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@j3r3mcdev/scoring": "^1.0.0",
     "axios": "^1.18.1",
     "cors": "^2.8.6",
     "deepmerge": "^4.3.1",
