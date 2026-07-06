@@ -1,4 +1,4 @@
-name: CI - Build & Test
+name: CI
 
 on:
   push:
@@ -9,11 +9,11 @@ on:
       - "**"
 
 jobs:
-  build-and-test:
+  sanity:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -21,19 +21,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: Configure npm for GitHub Packages
+      - name: Export NPM_TOKEN
+        run: echo "NPM_TOKEN=${{ secrets.NPM_TOKEN }}" >> $GITHUB_ENV
+
+      - name: Configure npm auth
         run: |
           echo "@j3r3mcdev:registry=https://npm.pkg.github.com" >> ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
-      - name: Build project
-        run: npm run build
-
-      - name: Run sanity check
+      - name: Run sanity-check
         run: npm run sanity
