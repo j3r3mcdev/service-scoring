@@ -1,43 +1,94 @@
 import {
   normalizeEvent,
-  RuleRegistry,
-  createEmptyContext,
   createEmptyResult,
+  ScoringResult,
+  Finding,
+  Severity,
+  NormalizedEvent,
 } from "@j3r3mcdev/scoring";
 
-import type { ScoringContext, ScoringResult } from "@j3r3mcdev/scoring";
-
 export class ScoringEngine {
-  /**
-   * Exécute le moteur de scoring sur un événement brut.
-   */
-  static run(event: any): ScoringResult {
-    // 1. Contexte vide conforme à ScoringContext
-    const ctx: ScoringContext = createEmptyContext();
+  static run(rawEvent: any): ScoringResult {
+    const base = createEmptyResult();
 
-    // 2. Normalisation — nouvelle signature : normalizeEvent(ctx, raw)
-    const normalized = normalizeEvent(event, event);
+    // 1. Normalisation HTTP
+    let normalized: NormalizedEvent = normalizeEvent("http", rawEvent);
 
-    // 3. Ajout de l’événement normalisé au contexte
-    ctx.events.push(normalized);
+    // 2. FIX : injecter le payload manquant
+    normalized = {
+      ...normalized,
+      payload:
+        rawEvent.payload ??
+        rawEvent.query ??
+        rawEvent.body ??
+        normalized.payload ??
+        "",
+    };
 
-    // 4. Préparation du résultat conforme à ScoringResult
-    const result: ScoringResult = createEmptyResult();
+    const payload: string = normalized.payload ?? "";
 
-    // 5. Récupération des règles
-    const rules = RuleRegistry.getAll();
+    const findings: Finding[] = [];
 
-    // 6. Application des règles
-    for (const rule of rules) {
-      const matches = rule.applies(ctx);
+    const sevLow: Severity = "low";
+    const sevMedium: Severity = "medium";
+    const sevHigh: Severity = "high";
 
-      if (matches) {
-        // ⚠️ On ne touche pas à result.findings, result.severity, etc.
-        // car leurs types exacts ne sont pas connus et TS refuse les propriétés non existantes.
-      }
+    // SQLi
+    if (/('|")\s*or\s*1=1/i.test(payload) || /(--|#)/.test(payload)) {
+      findings.push({
+        id: "sqli-basic",
+        vulnerability: "sqli",
+        severity: sevHigh,
+        score: 50,
+        evidence: [normalized],
+        details: `SQLi détectée dans le payload: ${payload}`,
+      });
     }
 
-    // 7. Retourne le résultat final
-    return result;
+    // XSS
+    if (/<script[^>]*>.*<\/script>/i.test(payload)) {
+      findings.push({
+        id: "xss-basic",
+        vulnerability: "xss",
+        severity: sevMedium,
+        score: 40,
+        evidence: [normalized],
+        details: `XSS détectée dans le payload: ${payload}`,
+      });
+    }
+
+    // RCE
+    if (
+      /(\bcmd=|\bexec=|\bcommand=)/i.test(payload) ||
+      /\b(ls|cat|whoami)\b/.test(payload)
+    ) {
+      findings.push({
+        id: "rce-basic",
+        vulnerability: "rce",
+        severity: sevHigh,
+        score: 60,
+        evidence: [normalized],
+        details: `RCE détectée dans le payload: ${payload}`,
+      });
+    }
+
+    const totalScore = findings.reduce((sum, f) => sum + f.score, 0);
+
+    let globalSeverity: Severity = "low";
+    if (totalScore > 80) globalSeverity = "critical";
+    else if (totalScore > 40) globalSeverity = "high";
+    else if (totalScore > 0) globalSeverity = "medium";
+
+    return {
+      ...base,
+      findings,
+      chains: [],
+      score: totalScore,
+      severity: globalSeverity,
+      timestamp: Date.now(),
+      metadata: {
+        source: normalized.source,
+      },
+    };
   }
 }

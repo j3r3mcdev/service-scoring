@@ -2,8 +2,8 @@ import { ScoringEngine } from "../engine/scoring-engine";
 import { adaptEvent } from "../adapters/event-adapter";
 
 export const scoringController = {
-  score(event: unknown) {
-    const adapted = adaptEvent(event);
-    return ScoringEngine.run(adapted);
+  score(rawEvent: unknown) {
+    const event = adaptEvent(rawEvent);
+    return ScoringEngine.run(event);
   },
 };
