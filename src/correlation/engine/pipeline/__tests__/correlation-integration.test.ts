@@ -1,29 +1,26 @@
-import { scoringPipeline } from "../pipelines/scoring-pipeline";
-import { adaptEvent } from "../adapters/event-adapter";
+import { scoringPipeline } from "../../../../pipelines/scoring-pipeline";
+import { adaptEvent } from "../../../../adapters/event-adapter";
 import { ScoringEngine } from "@j3r3mcdev/scoring";
-import { CorrelationEngine } from "../correlation/correlation-engine";
+import { CorrelationEngine } from "../../../correlation-engine";
 
-jest.mock("../adapters/event-adapter");
+jest.mock("../../../../adapters/event-adapter");
 jest.mock("@j3r3mcdev/scoring");
-jest.mock("../correlation/correlation-engine");
+jest.mock("../../../correlation-engine");
 
-describe("scoringPipeline", () => {
-  it("adapte l’event, appelle le moteur et la corrélation", () => {
+describe("correlation-integration", () => {
+  it("pipeline scoring + corrélation fonctionne", () => {
     const raw = { foo: "bar" };
     const adapted = { id: "normalized" };
 
-    // Mock adaptEvent
     (adaptEvent as jest.Mock).mockReturnValue(adapted);
 
-    // Mock ScoringEngine
     const scoringInstance = {
       run: jest.fn().mockReturnValue({ score: 42 }),
     };
     (ScoringEngine as jest.Mock).mockImplementation(() => scoringInstance);
 
-    // Mock CorrelationEngine
     const correlationInstance = {
-      run: jest.fn().mockReturnValue([{ id: "test-correlation" }]),
+      run: jest.fn().mockReturnValue([{ id: "full-intrusion-chain" }]),
     };
     (CorrelationEngine as jest.Mock).mockImplementation(
       () => correlationInstance,
@@ -31,15 +28,10 @@ describe("scoringPipeline", () => {
 
     const result = scoringPipeline(raw);
 
-    // Vérifie l’adaptation
-    expect(adaptEvent).toHaveBeenCalledWith(raw);
-
-    // Vérifie le scoring
-    expect(scoringInstance.run).toHaveBeenCalled();
     expect(result.score).toBe(42);
-
-    // Vérifie la corrélation
+    expect(result.correlation).toEqual([{ id: "full-intrusion-chain" }]);
+    expect(adaptEvent).toHaveBeenCalledWith(raw);
+    expect(scoringInstance.run).toHaveBeenCalled();
     expect(correlationInstance.run).toHaveBeenCalledWith([adapted]);
-    expect(result.correlation).toEqual([{ id: "test-correlation" }]);
   });
 });
