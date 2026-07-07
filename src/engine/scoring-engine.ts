@@ -1,43 +1,72 @@
 import {
   normalizeEvent,
-  RuleRegistry,
-  createEmptyContext,
   createEmptyResult,
+  ScoringResult,
+  Finding,
+  Severity,
+  NormalizedEvent,
+  ScoringContext,
 } from "@j3r3mcdev/scoring";
-
-import type { ScoringContext, ScoringResult } from "@j3r3mcdev/scoring";
+import { RuleRegistry } from "../rules/rule-registry";
 
 export class ScoringEngine {
-  /**
-   * Exécute le moteur de scoring sur un événement brut.
-   */
-  static run(event: any): ScoringResult {
-    // 1. Contexte vide conforme à ScoringContext
-    const ctx: ScoringContext = createEmptyContext();
+  static run(rawEvent: any): ScoringResult {
+    const base = createEmptyResult();
 
-    // 2. Normalisation — nouvelle signature : normalizeEvent(ctx, raw)
-    const normalized = normalizeEvent(event, event);
+    let normalized: NormalizedEvent = normalizeEvent("http", rawEvent);
 
-    // 3. Ajout de l’événement normalisé au contexte
-    ctx.events.push(normalized);
+    normalized = {
+      ...normalized,
+      payload:
+        rawEvent.payload ??
+        rawEvent.query ??
+        rawEvent.body ??
+        normalized.payload ??
+        "",
+      metadata: {
+        ...(normalized.metadata ?? {}),
+      },
+    };
 
-    // 4. Préparation du résultat conforme à ScoringResult
-    const result: ScoringResult = createEmptyResult();
+    const context: ScoringContext = {
+      events: [normalized],
+      chains: [],
+      metadata: {},
+    };
 
-    // 5. Récupération des règles
     const rules = RuleRegistry.getAll();
+    const ruleFindings = rules
+      .filter((rule) => rule.applies(context))
+      .flatMap((rule) => rule.execute(context).map((rf) => ({ rule, rf })));
 
-    // 6. Application des règles
-    for (const rule of rules) {
-      const matches = rule.applies(ctx);
+    const findings: Finding[] = ruleFindings.map(({ rule, rf }) => ({
+      id: rf.ruleId,
+      vulnerability: rf.vulnerability,
+      severity: rf.severity,
+      score: rf.score,
+      evidence: context.events,
+      chains: [],
+      details: rf.details,
+    }));
 
-      if (matches) {
-        // ⚠️ On ne touche pas à result.findings, result.severity, etc.
-        // car leurs types exacts ne sont pas connus et TS refuse les propriétés non existantes.
-      }
-    }
+    const totalScore = findings.reduce((sum, f) => sum + f.score, 0);
 
-    // 7. Retourne le résultat final
-    return result;
+    let globalSeverity: Severity = "low";
+    if (totalScore > 80) globalSeverity = "critical";
+    else if (totalScore > 40) globalSeverity = "high";
+    else if (totalScore > 0) globalSeverity = "medium";
+
+    return {
+      ...base,
+      findings,
+      chains: [],
+      score: totalScore,
+      severity: globalSeverity,
+      timestamp: Date.now(),
+      metadata: {
+        ...(base.metadata ?? {}),
+        source: normalized.source,
+      },
+    };
   }
 }
