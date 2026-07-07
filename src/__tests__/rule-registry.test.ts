@@ -1,17 +1,12 @@
-import { RuleRegistry } from "../rules/rule-registry";
+import { RuleRegistry } from "@j3r3mcdev/scoring";
 
-describe("RuleRegistry", () => {
-  it("charge toutes les règles natives", () => {
+describe("RuleRegistry (lib)", () => {
+  it("charge toutes les règles de la lib", () => {
     const rules = RuleRegistry.getAll();
-    expect(rules.length).toBeGreaterThan(0);
-  });
+    const ids = rules.map((r) => r.id);
 
-  it("expose des règles valides", () => {
-    const rules = RuleRegistry.getAll();
-    for (const rule of rules) {
-      expect(rule).toHaveProperty("id");
-      expect(rule).toHaveProperty("applies");
-      expect(rule).toHaveProperty("execute");
-    }
+    expect(ids).toContain("sqli-basic");
+    expect(ids).toContain("xss-basic");
+    expect(ids).toContain("rce-basic");
   });
 });
