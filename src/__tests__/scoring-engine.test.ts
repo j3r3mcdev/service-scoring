@@ -16,10 +16,6 @@ jest.mock("@j3r3mcdev/scoring", () => {
 });
 
 describe("ScoringEngine", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("compile et retourne un ScoringResult conforme", () => {
     const event = { foo: "bar" };
 

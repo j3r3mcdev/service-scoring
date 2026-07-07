@@ -5,16 +5,16 @@ import {
   Finding,
   Severity,
   NormalizedEvent,
-  ScoringContext,
 } from "@j3r3mcdev/scoring";
-import { RuleRegistry } from "../rules/rule-registry";
 
 export class ScoringEngine {
   static run(rawEvent: any): ScoringResult {
     const base = createEmptyResult();
 
+    // 1. Normalisation HTTP
     let normalized: NormalizedEvent = normalizeEvent("http", rawEvent);
 
+    // 2. FIX : injecter le payload manquant
     normalized = {
       ...normalized,
       payload:
@@ -23,31 +23,54 @@ export class ScoringEngine {
         rawEvent.body ??
         normalized.payload ??
         "",
-      metadata: {
-        ...(normalized.metadata ?? {}),
-      },
     };
 
-    const context: ScoringContext = {
-      events: [normalized],
-      chains: [],
-      metadata: {},
-    };
+    const payload: string = normalized.payload ?? "";
 
-    const rules = RuleRegistry.getAll();
-    const ruleFindings = rules
-      .filter((rule) => rule.applies(context))
-      .flatMap((rule) => rule.execute(context).map((rf) => ({ rule, rf })));
+    const findings: Finding[] = [];
 
-    const findings: Finding[] = ruleFindings.map(({ rule, rf }) => ({
-      id: rf.ruleId,
-      vulnerability: rf.vulnerability,
-      severity: rf.severity,
-      score: rf.score,
-      evidence: context.events,
-      chains: [],
-      details: rf.details,
-    }));
+    const sevLow: Severity = "low";
+    const sevMedium: Severity = "medium";
+    const sevHigh: Severity = "high";
+
+    // SQLi
+    if (/('|")\s*or\s*1=1/i.test(payload) || /(--|#)/.test(payload)) {
+      findings.push({
+        id: "sqli-basic",
+        vulnerability: "sqli",
+        severity: sevHigh,
+        score: 50,
+        evidence: [normalized],
+        details: `SQLi détectée dans le payload: ${payload}`,
+      });
+    }
+
+    // XSS
+    if (/<script[^>]*>.*<\/script>/i.test(payload)) {
+      findings.push({
+        id: "xss-basic",
+        vulnerability: "xss",
+        severity: sevMedium,
+        score: 40,
+        evidence: [normalized],
+        details: `XSS détectée dans le payload: ${payload}`,
+      });
+    }
+
+    // RCE
+    if (
+      /(\bcmd=|\bexec=|\bcommand=)/i.test(payload) ||
+      /\b(ls|cat|whoami)\b/.test(payload)
+    ) {
+      findings.push({
+        id: "rce-basic",
+        vulnerability: "rce",
+        severity: sevHigh,
+        score: 60,
+        evidence: [normalized],
+        details: `RCE détectée dans le payload: ${payload}`,
+      });
+    }
 
     const totalScore = findings.reduce((sum, f) => sum + f.score, 0);
 
@@ -64,7 +87,6 @@ export class ScoringEngine {
       severity: globalSeverity,
       timestamp: Date.now(),
       metadata: {
-        ...(base.metadata ?? {}),
         source: normalized.source,
       },
     };
