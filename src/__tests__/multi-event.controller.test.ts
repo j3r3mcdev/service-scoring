@@ -1,57 +1,104 @@
 import request from "supertest";
 import express from "express";
-import multiEventRoutes from "../api/multi-event.routes";
+import { MultiEventController } from "../api/multi-event.controller";
+import { multiEventPipeline } from "../pipelines/multi-event-pipeline";
+import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
-function evt(vuln: string, ts: number) {
-  return {
-    id: "evt",
-    source: "http",
-    timestamp: ts,
-    payload: "",
-    metadata: {
-      ip: "127.0.0.1",
-      findings: [
-        {
-          id: "rule",
-          vulnerability: vuln,
-          severity: "medium",
-          score: 0.5,
-          evidence: [],
-          chains: [],
-          details: "",
-        },
-      ],
-    },
-  };
-}
+jest.mock("../pipelines/multi-event-pipeline");
+const mockedPipeline = multiEventPipeline as jest.Mock;
 
-describe("multi-event.controller", () => {
-  const app = express();
-  app.use(express.json());
-  app.use("/api", multiEventRoutes);
+describe("MultiEventController.handleBatch", () => {
+  let app: express.Express;
 
-  it("retourne un résultat global pour un batch d'événements", async () => {
-    const res = await request(app)
-      .post("/api/scoring/batch")
-      .send({
-        events: [
-          evt("dns", 1000),
-          evt("path-traversal", 2000),
-          evt("rce", 3000),
-        ],
-      });
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
 
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
-    expect(res.body.events.length).toBe(3);
-    expect(res.body.globalScore).toBeDefined();
+    const controller = new MultiEventController();
+    app.post("/batch", (req, res) => controller.handleBatch(req, res));
+
+    mockedPipeline.mockReset();
   });
 
-  it("retourne une erreur si payload invalide", async () => {
+  it("renvoie 400 si payload invalide (pas un tableau)", async () => {
     const res = await request(app)
-      .post("/api/scoring/batch")
+      .post("/batch")
       .send({ events: "not-an-array" });
 
     expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      "Invalid payload: expected { events: NormalizedEvent[] }",
+    );
+  });
+
+  it("renvoie 400 si un event n'a pas de timestamp", async () => {
+    const res = await request(app)
+      .post("/batch")
+      .send({
+        events: [
+          {
+            id: "evt-1",
+            source: "http",
+            metadata: {},
+            payload: "{}",
+            // timestamp manquant → invalide
+          },
+        ],
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Invalid event format");
+  });
+
+  it("appelle le pipeline avec des events valides", async () => {
+    const events: NormalizedEvent[] = [
+      {
+        id: "evt-1",
+        source: "http",
+        timestamp: Date.now(),
+        payload: "{}",
+        metadata: { ip: "1.2.3.4" },
+      },
+      {
+        id: "evt-2",
+        source: "dns",
+        timestamp: Date.now(),
+        payload: "{}",
+        metadata: { domain: "example.com" },
+      },
+    ];
+
+    mockedPipeline.mockReturnValue({ score: 42 });
+
+    const res = await request(app).post("/batch").send({ events });
+
+    expect(mockedPipeline).toHaveBeenCalledTimes(1);
+    expect(mockedPipeline).toHaveBeenCalledWith(events);
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.score).toBe(42);
+  });
+
+  it("renvoie 500 si le pipeline throw une erreur", async () => {
+    mockedPipeline.mockImplementation(() => {
+      throw new Error("boom");
+    });
+
+    const events: NormalizedEvent[] = [
+      {
+        id: "evt-1",
+        source: "http",
+        timestamp: Date.now(),
+        payload: "{}",
+        metadata: {},
+      },
+    ];
+
+    const res = await request(app).post("/batch").send({ events });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe("Internal error");
+    expect(res.body.details).toBe("boom");
   });
 });

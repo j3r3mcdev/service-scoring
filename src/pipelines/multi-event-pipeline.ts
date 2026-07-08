@@ -3,15 +3,16 @@ import { CorrelationEngine } from "../correlation/correlation-engine";
 import { CorrelationScoring } from "../correlation/scoring/correlation-scoring";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { MultiEventResult } from "./types";
-import { EventHistoryStore } from "../storage/event-history";
+import { AlertEngine } from "../alerting/alert-engine";
+import { MLAlertEngine } from "../alerting/ml-alert-engine";
 
-const history = new EventHistoryStore();
 const correlationEngine = new CorrelationEngine();
 const correlationScoring = new CorrelationScoring();
+const alertEngine = new AlertEngine();
+const mlAlertEngine = new MLAlertEngine();
 
 export function multiEventPipeline(
   events: NormalizedEvent[],
-  options: { useHistory?: boolean } = { useHistory: true },
 ): MultiEventResult {
   if (!Array.isArray(events) || events.length === 0) {
     return {
@@ -19,29 +20,37 @@ export function multiEventPipeline(
       scores: [],
       correlation: [],
       globalScore: 0,
+      alerts: [],
     };
   }
 
-  let allEvents = events;
+  // Scoring individuel — extraction du score numérique
+  const scores = events.map((evt) => scoringPipeline(evt).score);
 
-  // Historique activé uniquement si demandé
-  if (options.useHistory) {
-    events.forEach((evt) => history.add(evt));
+  // Corrélation multi‑événements
+  const correlation = correlationEngine.run(events);
 
-    const ip = events[0].metadata?.ip ?? "";
-    const historicalEvents = history.get(ip);
+  // Scoring global
+  const globalScore = correlationScoring.compute(events, correlation);
 
-    allEvents = [...historicalEvents, ...events];
-  }
+  // Alertes statiques
+  const alerts = alertEngine.generateAlerts(events, correlation, globalScore);
 
-  const scores = allEvents.map((evt) => scoringPipeline(evt));
-  const correlation = correlationEngine.run(allEvents);
-  const globalScore = correlationScoring.compute(allEvents, correlation);
+  // Profil ML + alertes ML
+  const ip = events[0].metadata?.ip ?? "unknown";
+  mlAlertEngine.updateProfile(ip, events, globalScore);
+  const mlAlerts = mlAlertEngine.generateMLAlerts(
+    ip,
+    events,
+    correlation,
+    globalScore,
+  );
 
   return {
-    events: allEvents,
+    events,
     scores,
     correlation,
     globalScore,
+    alerts: [...alerts, ...mlAlerts],
   };
 }

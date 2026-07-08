@@ -13,7 +13,6 @@ export class MultiEventController {
         });
       }
 
-      // Validation minimale
       for (const evt of events) {
         if (typeof evt !== "object" || !evt.timestamp) {
           return res.status(400).json({
@@ -22,10 +21,7 @@ export class MultiEventController {
         }
       }
 
-      // Désactivation de l’historique pour les appels API
-      const result = multiEventPipeline(events as NormalizedEvent[], {
-        useHistory: false,
-      });
+      const result = multiEventPipeline(events as NormalizedEvent[]);
 
       return res.status(200).json({
         ok: true,
