@@ -12,8 +12,8 @@ function evt(ts: number): NormalizedEvent {
 }
 
 describe("WindowEngine", () => {
-  it("regroupe les events dans plusieurs fenêtres", () => {
-    const engine = new WindowEngine(1000); // 1s window
+  it("crée plusieurs fenêtres", () => {
+    const engine = new WindowEngine(1000);
 
     const events = [evt(1000), evt(1500), evt(3000)];
     const windows = engine.buildWindows(events);
@@ -23,7 +23,7 @@ describe("WindowEngine", () => {
     expect(windows[1].events.length).toBe(1);
   });
 
-  it("regroupe tous les events dans une seule fenêtre", () => {
+  it("crée une seule fenêtre si tout est proche", () => {
     const engine = new WindowEngine(5000);
 
     const events = [evt(1000), evt(2000), evt(3000)];
