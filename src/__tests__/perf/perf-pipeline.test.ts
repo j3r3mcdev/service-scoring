@@ -1,5 +1,6 @@
 import { scoringPipeline } from "../../pipelines/scoring-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 function evt(vuln: string): NormalizedEvent {
   return {
@@ -29,11 +30,11 @@ describe("Performance - Pipeline", () => {
     const events = Array.from({ length: 10000 }).map(() => evt("dns"));
 
     const start = performance.now();
-    const result = scoringPipeline(events[0]); // pipeline actuel = 1 event
+    const result = scoringPipeline(events); // pipeline multi‑events
     const end = performance.now();
 
     expect(result).toBeDefined();
-    expect(end - start).toBeLessThan(200); // pipeline doit être rapide
+    expect(end - start).toBeLessThan(200);
   });
 
   it("ne dépasse pas 500ms sur 100 000 events (simulation)", () => {
@@ -42,8 +43,7 @@ describe("Performance - Pipeline", () => {
     );
 
     const start = performance.now();
-    // simulation : on ne traite qu'un event car pipeline actuel n'est pas multi-event
-    scoringPipeline(events[0]);
+    scoringPipeline(events);
     const end = performance.now();
 
     expect(end - start).toBeLessThan(500);

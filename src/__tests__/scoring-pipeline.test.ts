@@ -1,45 +1,50 @@
+import { describe, it, expect } from "@jest/globals";
 import { scoringPipeline } from "../pipelines/scoring-pipeline";
-import { adaptEvent } from "../adapters/event-adapter";
-import { ScoringEngine } from "@j3r3mcdev/scoring";
-import { CorrelationEngine } from "../correlation/correlation-engine";
+import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
-jest.mock("../adapters/event-adapter");
-jest.mock("@j3r3mcdev/scoring");
-jest.mock("../correlation/correlation-engine");
+const makeEvent = (
+  overrides: Partial<NormalizedEvent> = {},
+): NormalizedEvent => ({
+  id: "evt",
+  source: "http",
+  timestamp: Date.now(),
+  payload: "",
+  metadata: {
+    ip: "127.0.0.1",
+    findings: [
+      {
+        id: "rule-1",
+        vulnerability: "sqli",
+        severity: "medium",
+        score: 0.7,
+        evidence: [],
+        chains: [],
+        details: "",
+      },
+    ],
+  },
+  ...overrides,
+});
 
 describe("scoringPipeline", () => {
-  it("adapte l’event, appelle le moteur et la corrélation", () => {
-    const raw = { foo: "bar" };
-    const adapted = { id: "normalized" };
+  it("retourne un ScoringResult avec score et chains", () => {
+    const events: NormalizedEvent[] = [makeEvent(), makeEvent(), makeEvent()];
 
-    // Mock adaptEvent
-    (adaptEvent as jest.Mock).mockReturnValue(adapted);
+    const result = scoringPipeline(events);
 
-    // Mock ScoringEngine
-    const scoringInstance = {
-      run: jest.fn().mockReturnValue({ score: 42 }),
-    };
-    (ScoringEngine as jest.Mock).mockImplementation(() => scoringInstance);
+    expect(result).toBeDefined();
+    expect(typeof result.score).toBe("number");
+    expect(result.score).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(result.chains)).toBe(true);
+  });
 
-    // Mock CorrelationEngine
-    const correlationInstance = {
-      run: jest.fn().mockReturnValue([{ id: "test-correlation" }]),
-    };
-    (CorrelationEngine as jest.Mock).mockImplementation(
-      () => correlationInstance,
-    );
+  it("supporte une liste vide d’événements (score cohérent)", () => {
+    const events: NormalizedEvent[] = [];
 
-    const result = scoringPipeline(raw);
+    const result = scoringPipeline(events);
 
-    // Vérifie l’adaptation
-    expect(adaptEvent).toHaveBeenCalledWith(raw);
-
-    // Vérifie le scoring
-    expect(scoringInstance.run).toHaveBeenCalled();
-    expect(result.score).toBe(42);
-
-    // Vérifie la corrélation
-    expect(correlationInstance.run).toHaveBeenCalledWith([adapted]);
-    expect(result.correlation).toEqual([{ id: "test-correlation" }]);
+    expect(result).toBeDefined();
+    expect(typeof result.score).toBe("number");
+    expect(Array.isArray(result.chains)).toBe(true);
   });
 });

@@ -1,27 +1,25 @@
-import { scoringController } from "../api/scoring.controller";
-import { adaptEvent } from "../adapters/event-adapter";
-import { ScoringEngine } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
+import { ScoringController } from "../api/scoring.controller";
+import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
-jest.mock("../adapters/event-adapter");
-jest.mock("@j3r3mcdev/scoring");
+const makeEvent = (
+  overrides: Partial<NormalizedEvent> = {},
+): NormalizedEvent => ({
+  id: "evt",
+  source: "http",
+  timestamp: Date.now(),
+  payload: "",
+  metadata: {},
+  ...overrides,
+});
 
-describe("scoringController", () => {
-  it("adapte l’event et appelle le moteur", () => {
-    const raw = { foo: "bar" };
-    const adapted = { id: "normalized", metadata: {} };
+describe("ScoringController", () => {
+  it("scoreWithAlerts retourne scoring + alerts", () => {
+    const events: NormalizedEvent[] = [makeEvent(), makeEvent()];
 
-    (adaptEvent as jest.Mock).mockReturnValue(adapted);
+    const result = ScoringController.scoreWithAlerts("127.0.0.1", events);
 
-    const engineInstance = {
-      run: jest.fn().mockReturnValue({ score: 99 }),
-    };
-
-    (ScoringEngine as jest.Mock).mockImplementation(() => engineInstance);
-
-    const result = scoringController.score(raw);
-
-    expect(adaptEvent).toHaveBeenCalledWith(raw);
-    expect(engineInstance.run).toHaveBeenCalled();
-    expect(result.score).toBe(99);
+    expect(result.score).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(result.alerts)).toBe(true);
   });
 });

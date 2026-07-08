@@ -1,5 +1,6 @@
 import { sqliRule } from "../../rules/sqli.rule";
 import { mockContext } from "./_helpers";
+import { describe, it, expect } from "@jest/globals";
 
 describe("rule.sqli.basic", () => {
   it("détecte une SQLi simple", () => {

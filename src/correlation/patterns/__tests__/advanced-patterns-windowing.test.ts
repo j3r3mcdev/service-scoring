@@ -1,6 +1,7 @@
 import { advancedPatterns } from "../advanced-patterns";
 import { WindowEngine } from "../../windowing/window-engine";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 const windowEngine = new WindowEngine(60000);
 

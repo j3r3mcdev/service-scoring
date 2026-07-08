@@ -1,5 +1,7 @@
 import { multiEventPipeline } from "../pipelines/multi-event-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
+import { CorrelationFinding } from "../correlation/correlation-types";
 
 function evt(vuln: string, ts: number): NormalizedEvent {
   return {
@@ -26,7 +28,7 @@ function evt(vuln: string, ts: number): NormalizedEvent {
 
 describe("multiEventPipeline", () => {
   it("traite plusieurs événements et renvoie un résultat global", () => {
-    const events = [
+    const events: NormalizedEvent[] = [
       evt("dns", 1000),
       evt("path-traversal", 2000),
       evt("rce", 3000),
@@ -40,11 +42,18 @@ describe("multiEventPipeline", () => {
   });
 
   it("détecte un pattern avancé via multi‑événements", () => {
-    const events = [evt("ssrf", 1000), evt("dns", 1500), evt("rce", 70000)];
+    const events: NormalizedEvent[] = [
+      evt("ssrf", 1000),
+      evt("dns", 1500),
+      evt("rce", 70000),
+    ];
 
     const result = multiEventPipeline(events);
 
-    const pivot = result.correlation.find((f) => f.id === "advanced-pivot");
+    const pivot = result.correlation.find(
+      (f: CorrelationFinding) => f.id === "advanced-pivot",
+    );
+
     expect(pivot).toBeDefined();
   });
 });

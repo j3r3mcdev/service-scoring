@@ -1,4 +1,5 @@
 import { ScoringEngine, Finding, Severity } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 describe("ScoringEngine — branches de sévérité (lib)", () => {
   const engine = new ScoringEngine();

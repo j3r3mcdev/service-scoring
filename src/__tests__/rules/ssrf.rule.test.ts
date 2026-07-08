@@ -1,5 +1,6 @@
 import { ssrfRule } from "../../rules/ssrf.rule";
 import { mockContext } from "./_helpers";
+import { describe, it, expect } from "@jest/globals";
 
 describe("rule.ssrf.basic", () => {
   it("détecte SSRF vers localhost", () => {

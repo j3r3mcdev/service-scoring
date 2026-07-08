@@ -3,6 +3,7 @@ import express from "express";
 import { MultiEventController } from "../api/multi-event.controller";
 import { multiEventPipeline } from "../pipelines/multi-event-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 
 jest.mock("../pipelines/multi-event-pipeline");
 const mockedPipeline = multiEventPipeline as jest.Mock;

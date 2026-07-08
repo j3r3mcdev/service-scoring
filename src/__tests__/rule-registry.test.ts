@@ -1,4 +1,5 @@
 import { RuleRegistry } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 describe("RuleRegistry (lib)", () => {
   it("charge toutes les règles de la lib", () => {

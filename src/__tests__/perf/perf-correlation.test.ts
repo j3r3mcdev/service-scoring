@@ -1,5 +1,6 @@
 import { CorrelationEngine } from "../../correlation/correlation-engine";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 function evt(vuln: string, ts: number): NormalizedEvent {
   return {
