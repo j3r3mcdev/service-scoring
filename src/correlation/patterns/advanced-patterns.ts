@@ -1,11 +1,13 @@
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { CorrelationPattern } from "./basic-patterns";
+import { WindowEngine } from "../windowing/window-engine";
+import {
+  countVulnInWindow,
+  hasSequence,
+  isDenseActivity,
+} from "../windowing/window-utils";
 
-function has(events: NormalizedEvent[], vuln: string): boolean {
-  return events.some((e) =>
-    e.metadata?.findings?.some((f: any) => f.vulnerability === vuln),
-  );
-}
+const windowEngine = new WindowEngine(60000); // fenêtre de 1 minute
 
 export const advancedPatterns: CorrelationPattern[] = [
   {
@@ -13,7 +15,10 @@ export const advancedPatterns: CorrelationPattern[] = [
     description: "Reconnaissance lente sur plusieurs minutes",
     severity: "medium",
     score: 0.6,
-    detect: (_events) => false, // TODO: implémenter windowing
+    detect: (events) => {
+      const windows = windowEngine.buildWindows(events);
+      return windows.some((w) => isDenseActivity(w, 3));
+    },
   },
 
   {
@@ -21,22 +26,42 @@ export const advancedPatterns: CorrelationPattern[] = [
     description: "Exfiltration DNS progressive",
     severity: "high",
     score: 0.8,
-    detect: (_events) => false, // TODO: implémenter séquences DNS
+    detect: (events) => {
+      const windows = windowEngine.buildWindows(events);
+      return windows.some((w) => countVulnInWindow(w, "dns") >= 5);
+    },
   },
 
   {
     id: "advanced-pivot",
-    description: "Pivot interne avancé",
+    description: "Pivot interne avancé : SSRF → DNS → RCE dans deux fenêtres",
     severity: "critical",
     score: 0.95,
-    detect: (_events) => false, // TODO: implémenter pivot multi‑événements
+    detect: (events) => {
+      const windows = windowEngine.buildWindows(events);
+      if (windows.length < 2) return false;
+
+      const first = windows[0];
+      const second = windows[1];
+
+      const seq1 = hasSequence(first, ["ssrf", "dns"]);
+      const seq2 = hasSequence(second, ["rce"]);
+
+      return seq1 && seq2;
+    },
   },
 
   {
     id: "privilege-escalation",
-    description: "Escalade de privilèges",
+    description:
+      "Escalade de privilèges : auth-success → admin-action → config-change",
     severity: "critical",
     score: 0.9,
-    detect: (_events) => false, // TODO: implémenter séquences auth
+    detect: (events) => {
+      const windows = windowEngine.buildWindows(events);
+      return windows.some((w) =>
+        hasSequence(w, ["auth-success", "admin-action", "config-change"]),
+      );
+    },
   },
 ];
