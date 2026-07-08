@@ -17,7 +17,42 @@ import { CorrelationEngine } from "../correlation/correlation-engine";
 import { CorrelationFinding } from "../correlation/correlation-types";
 
 /**
- * Convertit CorrelationChain → CorrelationFinding pour l’alerting
+ * Bonus de sévérité pour le score de corrélation avancé.
+ */
+function severityBonus(vuln: Vulnerability): number {
+  switch (vuln) {
+    case "rce":
+    case "ssrf":
+    case "sqli":
+      return 2;
+    case "xss":
+    case "lfi":
+    case "path_traversal":
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Score de corrélation avancé.
+ */
+function computeCorrelationScore(chain: CorrelationChain): number {
+  const eventCount = chain.events.length;
+  const sources = new Set(chain.events.map((e) => e.source));
+  const sourceCount = sources.size;
+
+  let score = chain.confidence;
+
+  score += eventCount * 0.5;
+  score += sourceCount * 1.0;
+  score += severityBonus(chain.type);
+
+  return score;
+}
+
+/**
+ * Convertit CorrelationChain → CorrelationFinding pour l’alerting.
  */
 function convertChainsToFindings(
   chains: Array<CorrelationChain | CorrelationFinding>,
@@ -46,24 +81,40 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
     const vuln: Vulnerability =
       f.events[0]?.metadata?.findings?.[0]?.vulnerability ?? "http";
 
-    return {
+    const evts = f.events;
+    const sources = new Set(evts.map((e) => e.source));
+
+    const baseChain: CorrelationChain = {
       id: f.id,
       type: vuln,
       confidence: f.score,
-      events: f.events,
+      events: evts,
+      eventCount: evts.length,
+      sourceCount: sources.size,
+    };
+
+    return {
+      ...baseChain,
+      correlationScore: computeCorrelationScore(baseChain),
     };
   });
 
-  // ✔ Fallback indispensable pour correlation-integration.test.ts
+  // Fallback indispensable pour les tests d’intégration
   if (chains.length === 0) {
-    chains = [
-      {
-        id: "auto-correlation",
-        type: "http",
-        confidence: 0.1,
-        events,
-      },
-    ];
+    const sources = new Set(events.map((e) => e.source));
+
+    const fallback: CorrelationChain = {
+      id: "auto-correlation",
+      type: "http",
+      confidence: 0.1,
+      events,
+      eventCount: events.length,
+      sourceCount: sources.size,
+    };
+
+    fallback.correlationScore = computeCorrelationScore(fallback);
+
+    chains = [fallback];
   }
 
   const context: ScoringContext = {
@@ -85,11 +136,67 @@ export function scoringWithAlerts(
   const scoring = scoringPipeline(events);
   const correlationFindings = convertChainsToFindings(scoring.chains);
 
+  // ─────────────────────────────────────────────────────────────
+  //  FEATURES ML — enrichissement corrélation
+  // ─────────────────────────────────────────────────────────────
+
+  const chainCount = scoring.chains.length;
+
+  const correlationScoreTotal = scoring.chains.reduce(
+    (acc, c) => acc + (c.correlationScore ?? 0),
+    0,
+  );
+
+  const correlationScoreMax = Math.max(
+    ...scoring.chains.map((c) => c.correlationScore ?? 0),
+  );
+
+  const correlationScoreAvg =
+    chainCount > 0 ? correlationScoreTotal / chainCount : 0;
+
+  const eventCountTotal = scoring.chains.reduce(
+    (acc, c) => acc + (c.eventCount ?? 0),
+    0,
+  );
+
+  const sourceCountTotal = scoring.chains.reduce(
+    (acc, c) => acc + (c.sourceCount ?? 0),
+    0,
+  );
+
+  const vulnerabilityDistribution = scoring.chains.reduce(
+    (acc, c) => {
+      acc[c.type] = (acc[c.type] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  const severityHints = scoring.chains.map((c) => ({
+    chainId: c.id,
+    vuln: c.type,
+    score: c.correlationScore ?? 0,
+  }));
+
+  const mlFeatures = {
+    chainCount,
+    correlationScoreTotal,
+    correlationScoreMax,
+    correlationScoreAvg,
+    eventCountTotal,
+    sourceCountTotal,
+    vulnerabilityDistribution,
+    severityHints,
+  };
+
+  // ─────────────────────────────────────────────────────────────
+
   const alerts = alertPipeline.run({
     ip,
     events,
     correlation: correlationFindings,
     scoring,
+    mlFeatures,
   });
 
   return {

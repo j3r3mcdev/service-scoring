@@ -3,13 +3,21 @@ import { basicPatterns } from "./patterns/basic-patterns";
 import { advancedPatterns } from "./patterns/advanced-patterns";
 import { CorrelationFinding } from "./correlation-types";
 
+/**
+ * Moteur de corrélation :
+ * - applique les patterns simples
+ * - applique les patterns avancés
+ * - retourne des CorrelationFinding bruts
+ */
 export class CorrelationEngine {
   run(events: NormalizedEvent[]): CorrelationFinding[] {
     const findings: CorrelationFinding[] = [];
 
     if (!events.length) return findings;
 
-    // Basic patterns
+    // ─────────────────────────────────────────────────────────────
+    //  BASIC PATTERNS
+    // ─────────────────────────────────────────────────────────────
     for (const pattern of basicPatterns) {
       if (pattern.detect(events)) {
         findings.push({
@@ -22,7 +30,9 @@ export class CorrelationEngine {
       }
     }
 
-    // Advanced patterns
+    // ─────────────────────────────────────────────────────────────
+    //  ADVANCED PATTERNS (multi‑événements)
+    // ─────────────────────────────────────────────────────────────
     for (const pattern of advancedPatterns) {
       if (pattern.detect(events)) {
         findings.push({
@@ -35,7 +45,7 @@ export class CorrelationEngine {
       }
     }
 
-    // ❌ Aucun fallback ici
+    // ❌ Aucun fallback ici (il est dans scoringPipeline)
     return findings;
   }
 }
