@@ -1,5 +1,6 @@
 import { EventHistoryStore } from "../storage/event-history";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 function evt(ip: string, ts: number): NormalizedEvent {
   return {

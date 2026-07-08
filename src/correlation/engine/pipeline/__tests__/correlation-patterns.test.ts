@@ -1,6 +1,7 @@
 import { basicPatterns } from "../../../patterns/basic-patterns";
 import { advancedPatterns } from "../../../patterns/advanced-patterns";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 function evt(vuln: string): NormalizedEvent {
   return {

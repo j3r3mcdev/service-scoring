@@ -1,5 +1,6 @@
 import { dnsRule } from "../../rules/dns.rule";
 import { mockContext } from "./_helpers";
+import { describe, it, expect } from "@jest/globals";
 
 describe("rule.dns.basic", () => {
   it("détecte un domaine interne", () => {

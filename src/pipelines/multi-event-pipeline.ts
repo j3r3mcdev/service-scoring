@@ -1,15 +1,19 @@
+import { NormalizedEvent, ScoringResult, Severity } from "@j3r3mcdev/scoring";
+
+import { MultiEventResult } from "./types";
 import { scoringPipeline } from "./scoring-pipeline";
+
 import { CorrelationEngine } from "../correlation/correlation-engine";
 import { CorrelationScoring } from "../correlation/scoring/correlation-scoring";
-import { NormalizedEvent } from "@j3r3mcdev/scoring";
-import { MultiEventResult } from "./types";
 import { AlertEngine } from "../alerting/alert-engine";
 import { MLAlertEngine } from "../alerting/ml-alert-engine";
+import { AlertPipeline } from "../alerting/alert-pipeline";
 
 const correlationEngine = new CorrelationEngine();
 const correlationScoring = new CorrelationScoring();
 const alertEngine = new AlertEngine();
 const mlAlertEngine = new MLAlertEngine();
+const alertPipeline = new AlertPipeline(alertEngine, mlAlertEngine);
 
 export function multiEventPipeline(
   events: NormalizedEvent[],
@@ -24,33 +28,39 @@ export function multiEventPipeline(
     };
   }
 
-  // Scoring individuel — extraction du score numérique
-  const scores = events.map((evt) => scoringPipeline(evt).score);
+  // scoringPipeline prend un tableau d'événements
+  const scores = events.map((evt) => scoringPipeline([evt]).score);
 
   // Corrélation multi‑événements
   const correlation = correlationEngine.run(events);
 
-  // Scoring global
+  // Score global
   const globalScore = correlationScoring.compute(events, correlation);
 
-  // Alertes statiques
-  const alerts = alertEngine.generateAlerts(events, correlation, globalScore);
-
-  // Profil ML + alertes ML
   const ip = events[0].metadata?.ip ?? "unknown";
-  mlAlertEngine.updateProfile(ip, events, globalScore);
-  const mlAlerts = mlAlertEngine.generateMLAlerts(
+
+  // ScoringResult complet, avec Severity valide
+  const scoring: ScoringResult = {
+    score: globalScore,
+    severity: "low" as Severity,
+    findings: [],
+    chains: [],
+    timestamp: Date.now(),
+    metadata: {},
+  };
+
+  const alerts = alertPipeline.run({
     ip,
     events,
     correlation,
-    globalScore,
-  );
+    scoring,
+  });
 
   return {
     events,
     scores,
     correlation,
     globalScore,
-    alerts: [...alerts, ...mlAlerts],
+    alerts,
   };
 }

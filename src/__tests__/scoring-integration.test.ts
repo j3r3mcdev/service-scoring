@@ -1,14 +1,26 @@
-import { scoringController } from "../api/scoring.controller";
+import { describe, it, expect } from "@jest/globals";
+import { ScoringController } from "../api/scoring.controller";
+import { NormalizedEvent } from "@j3r3mcdev/scoring";
+
+const makeEvent = (
+  overrides: Partial<NormalizedEvent> = {},
+): NormalizedEvent => ({
+  id: "evt",
+  source: "http",
+  timestamp: Date.now(),
+  payload: "",
+  metadata: {},
+  ...overrides,
+});
 
 describe("Service-Scoring — Intégration complète", () => {
   it("détecte une attaque SQLi via le controller", () => {
-    const event = {
-      method: "GET",
-      path: "/search",
+    const event: NormalizedEvent = makeEvent({
       payload: "q=' OR 1=1 --",
-    };
+      metadata: {},
+    });
 
-    const result = scoringController.score(event);
+    const result = ScoringController.scoreWithAlerts("127.0.0.1", [event]);
 
     const sqliFinding = result.findings.find((f) => f.vulnerability === "sqli");
 
@@ -17,13 +29,12 @@ describe("Service-Scoring — Intégration complète", () => {
   });
 
   it("détecte une attaque XSS via le controller", () => {
-    const event = {
-      method: "POST",
-      path: "/comment",
+    const event: NormalizedEvent = makeEvent({
       payload: "<script>alert('xss')</script>",
-    };
+      metadata: {},
+    });
 
-    const result = scoringController.score(event);
+    const result = ScoringController.scoreWithAlerts("127.0.0.1", [event]);
 
     const xssFinding = result.findings.find((f) => f.vulnerability === "xss");
 
@@ -32,13 +43,12 @@ describe("Service-Scoring — Intégration complète", () => {
   });
 
   it("détecte une tentative RCE via le controller", () => {
-    const event = {
-      method: "POST",
-      path: "/exec",
+    const event: NormalizedEvent = makeEvent({
       payload: "system('ls')",
-    };
+      metadata: {},
+    });
 
-    const result = scoringController.score(event);
+    const result = ScoringController.scoreWithAlerts("127.0.0.1", [event]);
 
     const rceFinding = result.findings.find((f) => f.vulnerability === "rce");
 

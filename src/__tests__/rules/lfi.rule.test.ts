@@ -1,5 +1,6 @@
 import { lfiRule } from "../../rules/lfi.rule";
 import { mockContext } from "./_helpers";
+import { describe, it, expect } from "@jest/globals";
 
 describe("rule.lfi.basic", () => {
   it("détecte un path traversal", () => {

@@ -1,6 +1,6 @@
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { CorrelationFinding } from "../correlation/correlation-types";
-import { Alert } from "./alert-engine";
+import { Alert } from "./alert-types";
 
 interface Profile {
   meanScore: number;
@@ -23,24 +23,21 @@ export class MLAlertEngine {
       lastUpdate: now,
     };
 
-    // EWMA pour le score
+    // moyenne glissante
     profile.meanScore = profile.meanScore * 0.9 + globalScore * 0.1;
 
-    // Variance approximative
+    // variance glissante
     profile.varianceScore =
       profile.varianceScore * 0.9 +
       Math.abs(globalScore - profile.meanScore) * 0.1;
 
-    // Fréquence des événements
+    // taux d’événements
     profile.eventRate = profile.eventRate * 0.8 + events.length * 0.2;
 
-    // Diversité des vulnérabilités
+    // diversité des vulnérabilités
     const vulns = new Set(
-      events.flatMap((e: NormalizedEvent) =>
-        e.metadata.findings.map(
-          (f: NormalizedEvent["metadata"]["findings"][number]) =>
-            f.vulnerability,
-        ),
+      events.flatMap((e) =>
+        (e.metadata.findings ?? []).map((f: any) => f.vulnerability),
       ),
     );
     profile.vulnDiversity = profile.vulnDiversity * 0.8 + vulns.size * 0.2;
@@ -58,13 +55,13 @@ export class MLAlertEngine {
     const alerts: Alert[] = [];
     const profile = this.profiles.get(ip);
 
-    if (!profile) {
-      return alerts;
-    }
+    if (!profile) return alerts;
 
-    // 1. Score anormal (Z-score)
     const z =
       (globalScore - profile.meanScore) / (profile.varianceScore + 0.0001);
+
+    // IDs attendus par les tests:
+    // "ml-anomaly-score", "ml-anomaly-rate", "ml-anomaly-diversity"
 
     if (z > 3) {
       alerts.push({
@@ -74,7 +71,6 @@ export class MLAlertEngine {
       });
     }
 
-    // 2. Fréquence anormale
     if (events.length > profile.eventRate * 2) {
       alerts.push({
         id: "ml-anomaly-rate",
@@ -83,13 +79,9 @@ export class MLAlertEngine {
       });
     }
 
-    // 3. Diversité anormale
     const vulns = new Set(
-      events.flatMap((e: NormalizedEvent) =>
-        e.metadata.findings.map(
-          (f: NormalizedEvent["metadata"]["findings"][number]) =>
-            f.vulnerability,
-        ),
+      events.flatMap((e) =>
+        (e.metadata.findings ?? []).map((f: any) => f.vulnerability),
       ),
     );
 

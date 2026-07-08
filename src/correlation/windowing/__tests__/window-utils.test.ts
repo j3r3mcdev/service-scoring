@@ -7,6 +7,7 @@ import {
 } from "../window-utils";
 import { TimeWindow } from "../types";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 function evt(vuln: string): NormalizedEvent {
   return {

@@ -1,37 +1,34 @@
+import { describe, it, expect } from "@jest/globals";
 import { scoringPipeline } from "../../../../pipelines/scoring-pipeline";
-import { adaptEvent } from "../../../../adapters/event-adapter";
-import { ScoringEngine } from "@j3r3mcdev/scoring";
-import { CorrelationEngine } from "../../../correlation-engine";
+import {
+  NormalizedEvent,
+  ScoringResult,
+  CorrelationChain,
+} from "@j3r3mcdev/scoring";
 
-jest.mock("../../../../adapters/event-adapter");
-jest.mock("@j3r3mcdev/scoring");
-jest.mock("../../../correlation-engine");
+const makeEvent = (
+  overrides: Partial<NormalizedEvent> = {},
+): NormalizedEvent => ({
+  id: "evt",
+  source: "http",
+  timestamp: Date.now(),
+  payload: "",
+  metadata: { findings: [] },
+  ...overrides,
+});
 
-describe("correlation-integration", () => {
-  it("pipeline scoring + corrélation fonctionne", () => {
-    const raw = { foo: "bar" };
-    const adapted = { id: "normalized" };
+describe("Correlation + Scoring — Intégration", () => {
+  it("génère des chaînes de corrélation et un score", () => {
+    const events: NormalizedEvent[] = [makeEvent(), makeEvent()];
 
-    (adaptEvent as jest.Mock).mockReturnValue(adapted);
+    const result: ScoringResult = scoringPipeline(events);
 
-    const scoringInstance = {
-      run: jest.fn().mockReturnValue({ score: 42 }),
-    };
-    (ScoringEngine as jest.Mock).mockImplementation(() => scoringInstance);
+    expect(Array.isArray(result.chains)).toBe(true);
 
-    const correlationInstance = {
-      run: jest.fn().mockReturnValue([{ id: "full-intrusion-chain" }]),
-    };
-    (CorrelationEngine as jest.Mock).mockImplementation(
-      () => correlationInstance,
+    const anyChain = result.chains.find(
+      (c: CorrelationChain) => c.events.length > 0,
     );
 
-    const result = scoringPipeline(raw);
-
-    expect(result.score).toBe(42);
-    expect(result.correlation).toEqual([{ id: "full-intrusion-chain" }]);
-    expect(adaptEvent).toHaveBeenCalledWith(raw);
-    expect(scoringInstance.run).toHaveBeenCalled();
-    expect(correlationInstance.run).toHaveBeenCalledWith([adapted]);
+    expect(anyChain).toBeDefined();
   });
 });

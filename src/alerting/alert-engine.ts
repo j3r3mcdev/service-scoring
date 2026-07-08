@@ -1,22 +1,12 @@
-import { NormalizedEvent } from "@j3r3mcdev/scoring";
-import { CorrelationFinding } from "../correlation/correlation-types";
-
-export interface Alert {
-  id: string;
-  severity: "low" | "medium" | "high" | "critical";
-  message: string;
-}
+import { Alert, AlertContext } from "./alert-types";
 
 export class AlertEngine {
-  generateAlerts(
-    events: NormalizedEvent[],
-    correlation: CorrelationFinding[],
-    globalScore: number,
-  ): Alert[] {
+  generateAlerts(ctx: AlertContext): Alert[] {
     const alerts: Alert[] = [];
+    const { events, correlation, scoring } = ctx;
 
-    // 1. Score global trop élevé
-    if (globalScore >= 0.8) {
+    // 1. Score global élevé
+    if (scoring.score >= 0.8) {
       alerts.push({
         id: "high-global-score",
         severity: "high",
@@ -24,11 +14,9 @@ export class AlertEngine {
       });
     }
 
-    // 2. Patterns critiques détectés
-    const criticalPatterns = correlation.filter(
-      (c: CorrelationFinding) => c.severity === "critical",
-    );
-    if (criticalPatterns.length > 0) {
+    // 2. Patterns critiques
+    const critical = correlation.filter((c) => c.severity === "critical");
+    if (critical.length > 0) {
       alerts.push({
         id: "critical-pattern",
         severity: "critical",
@@ -36,7 +24,7 @@ export class AlertEngine {
       });
     }
 
-    // 3. Fréquence anormale
+    // 3. Burst d’activité
     if (
       events.length >= 10 &&
       events[events.length - 1].timestamp - events[0].timestamp < 2000
@@ -50,11 +38,8 @@ export class AlertEngine {
 
     // 4. Diversité de vulnérabilités
     const vulns = new Set(
-      events.flatMap((e: NormalizedEvent) =>
-        e.metadata.findings.map(
-          (f: NormalizedEvent["metadata"]["findings"][number]) =>
-            f.vulnerability,
-        ),
+      events.flatMap((e) =>
+        (e.metadata.findings ?? []).map((f: any) => f.vulnerability),
       ),
     );
 

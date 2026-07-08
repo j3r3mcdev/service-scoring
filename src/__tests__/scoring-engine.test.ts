@@ -3,6 +3,7 @@ import {
   ScoringContext,
   NormalizedEvent,
 } from "@j3r3mcdev/scoring";
+import { describe, it, expect } from "@jest/globals";
 
 describe("ScoringEngine (lib)", () => {
   it("détecte une SQLi", () => {

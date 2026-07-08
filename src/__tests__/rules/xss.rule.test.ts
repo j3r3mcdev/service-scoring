@@ -1,5 +1,6 @@
 import { xssRule } from "../../rules/xss.rule";
 import { mockContext } from "./_helpers";
+import { describe, it, expect } from "@jest/globals";
 
 describe("rule.xss.basic", () => {
   it("détecte un script XSS", () => {
