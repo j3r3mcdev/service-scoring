@@ -22,7 +22,10 @@ export class MultiEventController {
         }
       }
 
-      const result = multiEventPipeline(events as NormalizedEvent[]);
+      // Désactivation de l’historique pour les appels API
+      const result = multiEventPipeline(events as NormalizedEvent[], {
+        useHistory: false,
+      });
 
       return res.status(200).json({
         ok: true,

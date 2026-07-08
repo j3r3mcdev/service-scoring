@@ -32,7 +32,7 @@ describe("multiEventPipeline", () => {
       evt("rce", 3000),
     ];
 
-    const result = multiEventPipeline(events);
+    const result = multiEventPipeline(events, { useHistory: false });
 
     expect(result.events.length).toBe(3);
     expect(result.scores.length).toBe(3);
