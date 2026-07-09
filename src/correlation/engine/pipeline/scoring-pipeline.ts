@@ -6,7 +6,6 @@ import {
 } from "@j3r3mcdev/scoring";
 
 import { CorrelationChain, CorrelationFinding } from "./correlation-types";
-
 import { ScoringResultExtended } from "./types";
 
 import { AlertPipeline } from "../../../alerting/alert-pipeline";
@@ -140,8 +139,21 @@ export function scoringWithAlerts(
   ip: string,
   events: NormalizedEvent[],
 ): ScoringResultExtended {
+  console.log(">>> scoringWithAlerts VERSION CORRIGÉE exécutée");
+
   const scoring = scoringPipeline(events);
   const correlationFindings = convertChainsToFindings(scoring.chains);
+
+  /**
+   * 🔥 Injection correcte : metadata.findings
+   */
+  const eventsWithFindings = events.map((e) => ({
+    ...e,
+    metadata: {
+      ...e.metadata,
+      findings: Array.isArray(e.metadata?.findings) ? e.metadata.findings : [],
+    },
+  }));
 
   const chainCount = scoring.chains.length;
 
@@ -204,9 +216,12 @@ export function scoringWithAlerts(
     attackLikelihoodAvg,
   };
 
+  /**
+   * 🔥 Correction : utiliser eventsWithFindings
+   */
   const alerts = alertPipeline.run({
     ip,
-    events,
+    events: eventsWithFindings,
     correlation: correlationFindings,
     scoring,
     mlFeatures,
