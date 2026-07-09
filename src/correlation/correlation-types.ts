@@ -6,4 +6,5 @@ export interface CorrelationFinding {
   severity: Severity;
   score: number;
   events: NormalizedEvent[];
+  metadata?: Record<string, any>;
 }
