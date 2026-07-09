@@ -1,4 +1,4 @@
-import { CorrelationEngine } from "../../../../killchain/correlation-engine";
+import { CorrelationEngine } from "../correlation-engine";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { describe, it, expect } from "@jest/globals";
 
