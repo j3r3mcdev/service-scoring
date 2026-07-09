@@ -35,9 +35,18 @@ export function scoringWithAlerts(
 
   const correlationFindings = convertChainsToFindings(scoring.chains);
 
+  /**
+   * 🔥 Correction : injecter findings dans chaque event
+   * NormalizedEvent n’a PAS de champ findings → crash dans AlertEngine
+   */
+  const eventsWithFindings = events.map((e) => ({
+    ...e,
+    findings: Array.isArray((e as any).findings) ? (e as any).findings : [],
+  }));
+
   const alerts = alertPipeline.run({
     ip,
-    events,
+    events: eventsWithFindings,
     correlation: correlationFindings,
     scoring,
   });

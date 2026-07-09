@@ -1,0 +1,13 @@
+{
+  "events": [
+    {
+      "id": "evt-1",
+      "type": "TEST_EVENT",
+      "timestamp": 1720540000000,
+      "ip": "127.0.0.1",
+      "source": "test",
+      "context": {},
+      "findings": []
+    }
+  ]
+}
