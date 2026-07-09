@@ -1,5 +1,5 @@
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
-import { CorrelationFinding } from "../correlation/correlation-types";
+import { CorrelationFinding } from "../correlation/engine/pipeline/correlation-types";
 import { ProfilingEngine } from "./ueba-profiling";
 import { DeviationEngine } from "./ueba-deviation";
 

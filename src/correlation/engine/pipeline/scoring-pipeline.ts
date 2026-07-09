@@ -1,20 +1,22 @@
 import {
   NormalizedEvent,
-  ScoringResult,
-  CorrelationChain,
   ScoringContext,
   Severity,
   Vulnerability,
 } from "@j3r3mcdev/scoring";
 
-import { AlertPipeline } from "../alerting/alert-pipeline";
-import { AlertEngine } from "../alerting/alert-engine";
-import { MLAlertEngine } from "../alerting/ml-alert-engine";
-import { ScoringWithAlerts } from "./types";
+import { CorrelationChain, CorrelationFinding } from "./correlation-types";
 
-import { ScoringEngine } from "../engine/scoring-engine";
-import { CorrelationEngine } from "../correlation/engine/pipeline/correlation-engine";
-import { CorrelationFinding } from "../correlation/correlation-types";
+import { ScoringResultExtended } from "./types";
+
+import { AlertPipeline } from "../../../alerting/alert-pipeline";
+import { AlertEngine } from "../../../alerting/alert-engine";
+import { MLAlertEngine } from "../../../alerting/ml-alert-engine";
+
+import { ScoringEngine } from "../../../engine/scoring-engine";
+import { CorrelationEngine } from "./correlation-engine";
+
+import { computeAttackLikelihood } from "./probabilistic-correlation";
 
 /**
  * Bonus de sévérité pour le score de corrélation avancé.
@@ -72,11 +74,12 @@ function convertChainsToFindings(
   });
 }
 
-export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
+export function scoringPipeline(
+  events: NormalizedEvent[],
+): ScoringResultExtended {
   const correlationEngine = new CorrelationEngine();
   const rawFindings: CorrelationFinding[] = correlationEngine.run(events);
 
-  // Conversion CorrelationFinding → CorrelationChain
   let chains: CorrelationChain[] = rawFindings.map((f) => {
     const vuln: Vulnerability =
       f.events[0]?.metadata?.findings?.[0]?.vulnerability ?? "http";
@@ -93,13 +96,16 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
       sourceCount: sources.size,
     };
 
+    const correlationScore = computeCorrelationScore(baseChain);
+    const attackLikelihood = computeAttackLikelihood(baseChain);
+
     return {
       ...baseChain,
-      correlationScore: computeCorrelationScore(baseChain),
+      correlationScore,
+      attackLikelihood,
     };
   });
 
-  // Fallback indispensable pour les tests d’intégration
   if (chains.length === 0) {
     const sources = new Set(events.map((e) => e.source));
 
@@ -113,6 +119,7 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
     };
 
     fallback.correlationScore = computeCorrelationScore(fallback);
+    fallback.attackLikelihood = computeAttackLikelihood(fallback);
 
     chains = [fallback];
   }
@@ -124,7 +131,7 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
   };
 
   const scoringEngine = new ScoringEngine();
-  return scoringEngine.run(context);
+  return scoringEngine.run(context) as ScoringResultExtended;
 }
 
 const alertPipeline = new AlertPipeline(new AlertEngine(), new MLAlertEngine());
@@ -132,13 +139,9 @@ const alertPipeline = new AlertPipeline(new AlertEngine(), new MLAlertEngine());
 export function scoringWithAlerts(
   ip: string,
   events: NormalizedEvent[],
-): ScoringWithAlerts {
+): ScoringResultExtended {
   const scoring = scoringPipeline(events);
   const correlationFindings = convertChainsToFindings(scoring.chains);
-
-  // ─────────────────────────────────────────────────────────────
-  //  FEATURES ML — enrichissement corrélation
-  // ─────────────────────────────────────────────────────────────
 
   const chainCount = scoring.chains.length;
 
@@ -178,6 +181,16 @@ export function scoringWithAlerts(
     score: c.correlationScore ?? 0,
   }));
 
+  const attackLikelihoodMax = Math.max(
+    ...scoring.chains.map((c) => c.attackLikelihood ?? 0),
+  );
+
+  const attackLikelihoodAvg =
+    chainCount > 0
+      ? scoring.chains.reduce((acc, c) => acc + (c.attackLikelihood ?? 0), 0) /
+        chainCount
+      : 0;
+
   const mlFeatures = {
     chainCount,
     correlationScoreTotal,
@@ -187,9 +200,9 @@ export function scoringWithAlerts(
     sourceCountTotal,
     vulnerabilityDistribution,
     severityHints,
+    attackLikelihoodMax,
+    attackLikelihoodAvg,
   };
-
-  // ─────────────────────────────────────────────────────────────
 
   const alerts = alertPipeline.run({
     ip,

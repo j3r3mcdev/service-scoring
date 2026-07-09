@@ -1,4 +1,4 @@
-import { scoringWithAlerts } from "../pipelines/scoring-pipeline";
+import { scoringWithAlerts } from "../correlation/engine/pipeline/scoring-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
 export const ScoringController = {

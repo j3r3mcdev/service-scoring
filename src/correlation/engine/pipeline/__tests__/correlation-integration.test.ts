@@ -1,10 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
-import { scoringPipeline } from "../../../../pipelines/scoring-pipeline";
-import {
-  NormalizedEvent,
-  ScoringResult,
-  CorrelationChain,
-} from "@j3r3mcdev/scoring";
+import { scoringPipeline } from "../scoring-pipeline";
+import { CorrelationChain } from "../correlation-types";
+import { NormalizedEvent, ScoringResult } from "@j3r3mcdev/scoring";
 
 const makeEvent = (
   overrides: Partial<NormalizedEvent> = {},

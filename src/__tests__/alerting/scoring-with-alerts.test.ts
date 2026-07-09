@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from "@jest/globals";
-import { scoringWithAlerts } from "../../pipelines/scoring-pipeline";
+import { scoringWithAlerts } from "../../correlation/engine/pipeline/scoring-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { Alert } from "../../alerting/alert-types";
 import { AlertPipeline } from "../../alerting/alert-pipeline";
