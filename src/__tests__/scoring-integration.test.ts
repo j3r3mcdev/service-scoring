@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { ScoringController } from "../api/scoring.controller";
+import { ScoringController } from "../controller/scoring";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
 const makeEvent = (
