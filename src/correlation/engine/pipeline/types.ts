@@ -1,6 +1,15 @@
 import { NormalizedEvent, ScoringResult } from "@j3r3mcdev/scoring";
-import { CorrelationFinding } from "./correlation-types";
+import { CorrelationChain, CorrelationFinding } from "./correlation-types";
 import { Alert } from "../../../alerting/alert-types";
+
+/**
+ * Étend le ScoringResult du package NPM pour utiliser NOTRE CorrelationChain
+ * et ajoute la propriété alerts pour scoring-with-alerts.
+ */
+export interface ScoringResultExtended extends ScoringResult {
+  chains: CorrelationChain[];
+  alerts?: Alert[]; // 🔥 AJOUT INDISPENSABLE
+}
 
 /**
  * Résultat du pipeline multi‑événements
@@ -16,6 +25,6 @@ export interface MultiEventResult {
 /**
  * Résultat du pipeline scoring + alerting
  */
-export interface ScoringWithAlerts extends ScoringResult {
+export interface ScoringWithAlerts extends ScoringResultExtended {
   alerts: Alert[];
 }

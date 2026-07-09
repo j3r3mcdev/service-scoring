@@ -1,6 +1,5 @@
 import {
   NormalizedEvent,
-  ScoringResult,
   ScoringContext,
   Severity,
   Vulnerability,
@@ -8,10 +7,11 @@ import {
 
 import { CorrelationChain, CorrelationFinding } from "./correlation-types";
 
+import { ScoringResultExtended } from "./types";
+
 import { AlertPipeline } from "../../../alerting/alert-pipeline";
 import { AlertEngine } from "../../../alerting/alert-engine";
 import { MLAlertEngine } from "../../../alerting/ml-alert-engine";
-import { ScoringWithAlerts } from "./types";
 
 import { ScoringEngine } from "../../../engine/scoring-engine";
 import { CorrelationEngine } from "./correlation-engine";
@@ -74,7 +74,9 @@ function convertChainsToFindings(
   });
 }
 
-export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
+export function scoringPipeline(
+  events: NormalizedEvent[],
+): ScoringResultExtended {
   const correlationEngine = new CorrelationEngine();
   const rawFindings: CorrelationFinding[] = correlationEngine.run(events);
 
@@ -129,7 +131,7 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
   };
 
   const scoringEngine = new ScoringEngine();
-  return scoringEngine.run(context);
+  return scoringEngine.run(context) as ScoringResultExtended;
 }
 
 const alertPipeline = new AlertPipeline(new AlertEngine(), new MLAlertEngine());
@@ -137,7 +139,7 @@ const alertPipeline = new AlertPipeline(new AlertEngine(), new MLAlertEngine());
 export function scoringWithAlerts(
   ip: string,
   events: NormalizedEvent[],
-): ScoringWithAlerts {
+): ScoringResultExtended {
   const scoring = scoringPipeline(events);
   const correlationFindings = convertChainsToFindings(scoring.chains);
 
