@@ -18,6 +18,7 @@ export interface CorrelationChain {
 /**
  * Résultat brut d’un détecteur de corrélation (patterns, killchain, multi‑IP, UEBA…)
  */
+
 export interface CorrelationFinding {
   id: string;
   description: string;
