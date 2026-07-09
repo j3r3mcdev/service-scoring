@@ -1,7 +1,7 @@
 import { multiEventPipeline } from "../correlation/engine/pipeline/multi-event-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { describe, it, expect } from "@jest/globals";
-import { CorrelationFinding } from "../correlation/correlation-types";
+import { CorrelationFinding } from "../correlation/engine/pipeline/correlation-types";
 
 function evt(vuln: string, ts: number): NormalizedEvent {
   return {

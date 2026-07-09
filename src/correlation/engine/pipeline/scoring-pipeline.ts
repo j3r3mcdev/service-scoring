@@ -15,7 +15,7 @@ import { ScoringWithAlerts } from "./types";
 
 import { ScoringEngine } from "../../../engine/scoring-engine";
 import { CorrelationEngine } from "./correlation-engine";
-import { CorrelationFinding } from "../../correlation-types";
+import { CorrelationFinding } from "./correlation-types";
 
 // ⚠️ Correction : ton chemin était faux
 import { computeAttackLikelihood } from "../pipeline/probabilistic-correlation";

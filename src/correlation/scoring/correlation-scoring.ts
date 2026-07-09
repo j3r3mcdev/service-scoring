@@ -1,5 +1,5 @@
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
-import { CorrelationFinding } from "../correlation-types";
+import { CorrelationFinding } from "../engine/pipeline/correlation-types";
 import { TimeWindow } from "../windowing/types";
 import { WindowEngine } from "../windowing/window-engine";
 import {

@@ -1,7 +1,7 @@
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { basicPatterns } from "../../patterns/basic-patterns";
 import { advancedPatterns } from "../../patterns/advanced-patterns";
-import { CorrelationFinding } from "../../correlation-types";
+import { CorrelationFinding } from "./correlation-types";
 import { EntityRegistry } from "../../multi-ip/entity-registry";
 import { MultiIPCorrelationEngine } from "../../multi-ip/multi-ip-engine";
 import { KillChainEngine } from "../../../killchain/kill-chain-engine";
@@ -14,9 +14,7 @@ export class CorrelationEngine {
 
     if (!events.length) return findings;
 
-    // ─────────────────────────────────────────────────────────────
-    //  BASIC PATTERNS (phase 1)
-    // ─────────────────────────────────────────────────────────────
+    // BASIC PATTERNS
     for (const pattern of basicPatterns) {
       if (pattern.detect(events)) {
         findings.push({
@@ -29,9 +27,7 @@ export class CorrelationEngine {
       }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  ADVANCED PATTERNS (phase 2)
-    // ─────────────────────────────────────────────────────────────
+    // ADVANCED PATTERNS
     for (const pattern of advancedPatterns) {
       if (pattern.detect(events)) {
         findings.push({
@@ -44,9 +40,7 @@ export class CorrelationEngine {
       }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  KILL CHAIN (phase 5)
-    // ─────────────────────────────────────────────────────────────
+    // KILL CHAIN (phase 5)
     const killChainEngine = new KillChainEngine();
     const killChainSteps = killChainEngine.run(findings);
 
@@ -64,26 +58,21 @@ export class CorrelationEngine {
       });
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  MULTI‑IP (phase 4)
-    // ─────────────────────────────────────────────────────────────
+    // MULTI‑IP (phase 4)
     const registry = new EntityRegistry();
     for (const event of events) {
       registry.add(event);
     }
+    // ─────────────────────────────────────────────────────────────
+    //  UEBA (phase 7)
+    // ─────────────────────────────────────────────────────────────
+    const uebaEngine = new UEBAEngine();
+    const uebaFindings = uebaEngine.run(events);
+    findings.push(...uebaFindings);
 
     const multiIPEngine = new MultiIPCorrelationEngine();
     const multiIPFindings = multiIPEngine.run(registry);
     findings.push(...multiIPFindings);
-
-    // ─────────────────────────────────────────────────────────────
-    //  UEBA (phase 7) — désactivé pour les gros volumes (perf tests)
-    // ─────────────────────────────────────────────────────────────
-    if (events.length < 10000) {
-      const uebaEngine = new UEBAEngine();
-      const uebaFindings = uebaEngine.run(events);
-      findings.push(...uebaFindings);
-    }
 
     // ─────────────────────────────────────────────────────────────
     //  GRAPHE D'ÉVÉNEMENTS (phase 6)

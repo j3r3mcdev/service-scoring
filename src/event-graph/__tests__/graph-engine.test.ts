@@ -1,6 +1,6 @@
 import { GraphEngine } from "../../event-graph/graph-engine";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
-import { CorrelationFinding } from "../..//correlation/correlation-types";
+import { CorrelationFinding } from "../../correlation/engine/pipeline/correlation-types";
 import { describe, it, expect } from "@jest/globals";
 
 /**

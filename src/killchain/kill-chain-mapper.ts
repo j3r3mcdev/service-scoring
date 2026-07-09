@@ -1,4 +1,4 @@
-import { CorrelationFinding } from "../correlation/correlation-types";
+import { CorrelationFinding } from "../correlation/engine/pipeline/correlation-types";
 import { KillChainStage } from "./kill-chain-stages";
 
 export class KillChainMapper {

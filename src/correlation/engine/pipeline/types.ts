@@ -1,5 +1,5 @@
 import { NormalizedEvent, ScoringResult } from "@j3r3mcdev/scoring";
-import { CorrelationFinding } from "../../correlation-types";
+import { CorrelationFinding } from "./correlation-types";
 import { Alert } from "../../../alerting/alert-types";
 
 /**

@@ -1,5 +1,5 @@
 import { KillChainEngine } from "../kill-chain-engine";
-import { CorrelationFinding } from "../../correlation/correlation-types";
+import { CorrelationFinding } from "../../correlation/engine/pipeline/correlation-types";
 import { describe, it, expect } from "@jest/globals";
 
 const makeFinding = (id: string): CorrelationFinding => ({

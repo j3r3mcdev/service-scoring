@@ -7,7 +7,7 @@ import { AlertEngine } from "../../../alerting/alert-engine";
 import { MLAlertEngine } from "../../../alerting/ml-alert-engine";
 
 import { scoringPipeline } from "./scoring-pipeline";
-import { CorrelationFinding } from "../../correlation-types";
+import { CorrelationFinding } from "./correlation-types";
 import { ScoringWithAlerts } from "./types";
 
 /**

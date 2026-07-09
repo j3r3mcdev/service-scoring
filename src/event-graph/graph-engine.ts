@@ -1,5 +1,5 @@
 import { EventGraph } from "./event-graph";
-import { CorrelationFinding } from "../correlation/correlation-types";
+import { CorrelationFinding } from "../correlation/engine/pipeline/correlation-types";
 
 export class GraphEngine {
   build(events: any[], findings: CorrelationFinding[]): EventGraph {
