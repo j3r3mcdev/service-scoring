@@ -38,7 +38,8 @@ COPY --from=builder /app/dist ./dist
 COPY package.json package-lock.json ./
 
 # Installer uniquement les deps de prod
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
+
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s \

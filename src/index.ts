@@ -12,7 +12,7 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true });
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 7777;
 
 app.listen(PORT, () => {
   console.log(`Service scoring running on port ${PORT}`);
