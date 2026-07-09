@@ -13,7 +13,7 @@ import { MLAlertEngine } from "../alerting/ml-alert-engine";
 import { ScoringWithAlerts } from "./types";
 
 import { ScoringEngine } from "../engine/scoring-engine";
-import { CorrelationEngine } from "../killchain/correlation-engine";
+import { CorrelationEngine } from "../correlation/engine/pipeline/correlation-engine";
 import { CorrelationFinding } from "../correlation/correlation-types";
 
 /**

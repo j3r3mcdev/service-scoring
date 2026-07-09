@@ -1,12 +1,11 @@
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
-import { basicPatterns } from "../correlation/patterns/basic-patterns";
-import { advancedPatterns } from "../correlation/patterns/advanced-patterns";
-import { CorrelationFinding } from "../correlation/correlation-types";
-
-// PHASE 4 IMPORTS
-import { EntityRegistry } from "../correlation/multi-ip/entity-registry";
-import { MultiIPCorrelationEngine } from "../correlation/multi-ip/multi-ip-engine";
-import { KillChainEngine } from "../killchain/kill-chain-engine";
+import { basicPatterns } from "../../patterns/basic-patterns";
+import { advancedPatterns } from "../../patterns/advanced-patterns";
+import { CorrelationFinding } from "../../correlation-types";
+import { EntityRegistry } from "../../multi-ip/entity-registry";
+import { MultiIPCorrelationEngine } from "../../multi-ip/multi-ip-engine";
+import { KillChainEngine } from "../../../killchain/kill-chain-engine";
+import { GraphEngine } from "../../../event-graph/graph-engine";
 
 export class CorrelationEngine {
   run(events: NormalizedEvent[]): CorrelationFinding[] {
@@ -40,13 +39,10 @@ export class CorrelationEngine {
       }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  KILL CHAIN (phase 5)
-    // ─────────────────────────────────────────────────────────────
+    // KILL CHAIN (phase 5)
     const killChainEngine = new KillChainEngine();
     const killChainSteps = killChainEngine.run(findings);
 
-    // On ajoute les steps comme findings enrichis
     for (const step of killChainSteps) {
       findings.push({
         id: `killchain-${step.stage}`,
@@ -61,7 +57,7 @@ export class CorrelationEngine {
       });
     }
 
-    // MULTI‑IP CORRELATION (PHASE 4)
+    // MULTI‑IP (phase 4)
     const registry = new EntityRegistry();
     for (const event of events) {
       registry.add(event);
@@ -69,8 +65,24 @@ export class CorrelationEngine {
 
     const multiIPEngine = new MultiIPCorrelationEngine();
     const multiIPFindings = multiIPEngine.run(registry);
-
     findings.push(...multiIPFindings);
+
+    // ─────────────────────────────────────────────────────────────
+    //  GRAPHE D'ÉVÉNEMENTS (phase 6)
+    // ─────────────────────────────────────────────────────────────
+    if (findings.length > 0) {
+      const graphEngine = new GraphEngine();
+      const graph = graphEngine.build(events, findings);
+
+      findings.push({
+        id: "event-graph",
+        description: "Event graph generated",
+        severity: "low",
+        score: 0,
+        events,
+        metadata: { graph },
+      });
+    }
 
     return findings;
   }
