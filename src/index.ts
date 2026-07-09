@@ -1,10 +1,16 @@
-import express from "express";
-import multiEventRoutes from "./api/multi-event.routes";
+import { Router } from "express";
+import { ScoringController } from "./api/scoring.controller";
 
-const app = express();
-app.use(express.json());
+const router = Router();
 
-// Ajout de la route multi‑événements
-app.use("/api", multiEventRoutes);
+router.post("/score", (req, res) => {
+  const rawIp = req.ip ?? req.headers["x-forwarded-for"] ?? "unknown";
+  const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp;
 
-export default app;
+  const events = req.body?.events ?? [];
+  const result = ScoringController.scoreWithAlerts(ip, events);
+
+  res.json(result);
+});
+
+export default router;
