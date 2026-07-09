@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { multiEventPipeline } from "../correlation/engine/pipeline/multi-event-pipeline";
+import { scoringPipeline } from "../correlation/engine/pipeline/scoring-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
 export class MultiEventController {
@@ -21,11 +21,12 @@ export class MultiEventController {
         }
       }
 
-      const result = multiEventPipeline(events as NormalizedEvent[]);
+      const result = scoringPipeline(events as NormalizedEvent[]);
 
       return res.status(200).json({
         ok: true,
         ...result,
+        score: result.score ?? 0,
       });
     } catch (err: any) {
       return res.status(500).json({

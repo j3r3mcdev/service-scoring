@@ -1,12 +1,12 @@
 import request from "supertest";
 import express from "express";
 import { MultiEventController } from "../api/multi-event.controller";
-import { multiEventPipeline } from "../correlation/engine/pipeline/multi-event-pipeline";
+import { scoringPipeline } from "../correlation/engine/pipeline/scoring-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 
-jest.mock("../correlation/engine/pipeline/multi-event-pipeline");
-const mockedPipeline = multiEventPipeline as jest.Mock;
+jest.mock("../correlation/engine/pipeline/scoring-pipeline");
+const mockedPipeline = scoringPipeline as jest.Mock;
 
 describe("MultiEventController.handleBatch", () => {
   let app: express.Express;
