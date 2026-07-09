@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { scoringPipeline } from "../pipelines/scoring-pipeline";
+import { scoringPipeline } from "../correlation/engine/pipeline/scoring-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
 const makeEvent = (

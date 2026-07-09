@@ -7,14 +7,17 @@ import {
   Vulnerability,
 } from "@j3r3mcdev/scoring";
 
-import { AlertPipeline } from "../alerting/alert-pipeline";
-import { AlertEngine } from "../alerting/alert-engine";
-import { MLAlertEngine } from "../alerting/ml-alert-engine";
+import { AlertPipeline } from "../../../alerting/alert-pipeline";
+import { AlertEngine } from "../../../alerting/alert-engine";
+import { MLAlertEngine } from "../../../alerting/ml-alert-engine";
 import { ScoringWithAlerts } from "./types";
 
-import { ScoringEngine } from "../engine/scoring-engine";
-import { CorrelationEngine } from "../correlation/engine/pipeline/correlation-engine";
-import { CorrelationFinding } from "../correlation/correlation-types";
+import { ScoringEngine } from "../../../engine/scoring-engine";
+import { CorrelationEngine } from "./correlation-engine";
+import { CorrelationFinding } from "../../correlation-types";
+
+// ⚠️ Correction : ton chemin était faux
+import { computeAttackLikelihood } from "../pipeline/probabilistic-correlation";
 
 /**
  * Bonus de sévérité pour le score de corrélation avancé.
@@ -93,9 +96,13 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
       sourceCount: sources.size,
     };
 
+    const correlationScore = computeCorrelationScore(baseChain);
+    const attackLikelihood = computeAttackLikelihood(baseChain);
+
     return {
       ...baseChain,
-      correlationScore: computeCorrelationScore(baseChain),
+      correlationScore,
+      attackLikelihood,
     };
   });
 
@@ -113,6 +120,7 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
     };
 
     fallback.correlationScore = computeCorrelationScore(fallback);
+    fallback.attackLikelihood = computeAttackLikelihood(fallback);
 
     chains = [fallback];
   }
@@ -178,6 +186,17 @@ export function scoringWithAlerts(
     score: c.correlationScore ?? 0,
   }));
 
+  // ⚠️ Ajout Phase 8 — Probabilistic ML features
+  const attackLikelihoodMax = Math.max(
+    ...scoring.chains.map((c) => c.attackLikelihood ?? 0),
+  );
+
+  const attackLikelihoodAvg =
+    chainCount > 0
+      ? scoring.chains.reduce((acc, c) => acc + (c.attackLikelihood ?? 0), 0) /
+        chainCount
+      : 0;
+
   const mlFeatures = {
     chainCount,
     correlationScoreTotal,
@@ -187,6 +206,8 @@ export function scoringWithAlerts(
     sourceCountTotal,
     vulnerabilityDistribution,
     severityHints,
+    attackLikelihoodMax,
+    attackLikelihoodAvg,
   };
 
   // ─────────────────────────────────────────────────────────────

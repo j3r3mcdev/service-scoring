@@ -1,4 +1,4 @@
-import { multiEventPipeline } from "../pipelines/multi-event-pipeline";
+import { multiEventPipeline } from "../correlation/engine/pipeline/multi-event-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 import { describe, it, expect } from "@jest/globals";
 import { CorrelationFinding } from "../correlation/correlation-types";

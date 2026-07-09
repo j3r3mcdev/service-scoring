@@ -5,12 +5,12 @@ import {
   Severity,
 } from "@j3r3mcdev/scoring";
 
-import { AlertPipeline } from "../alerting/alert-pipeline";
-import { AlertEngine } from "../alerting/alert-engine";
-import { MLAlertEngine } from "../alerting/ml-alert-engine";
+import { AlertPipeline } from "../../../alerting/alert-pipeline";
+import { AlertEngine } from "../../../alerting/alert-engine";
+import { MLAlertEngine } from "../../../alerting/ml-alert-engine";
 
 import { scoringPipeline } from "./scoring-pipeline";
-import { CorrelationFinding } from "../correlation/correlation-types";
+import { CorrelationFinding } from "../../correlation-types";
 import { ScoringWithAlerts } from "./types";
 
 /**

@@ -1,13 +1,12 @@
 import { NormalizedEvent, ScoringResult, Severity } from "@j3r3mcdev/scoring";
-
 import { MultiEventResult } from "./types";
 import { scoringPipeline } from "./scoring-pipeline";
 
-import { CorrelationEngine } from "../correlation/engine/pipeline/correlation-engine";
-import { CorrelationScoring } from "../correlation/scoring/correlation-scoring";
-import { AlertEngine } from "../alerting/alert-engine";
-import { MLAlertEngine } from "../alerting/ml-alert-engine";
-import { AlertPipeline } from "../alerting/alert-pipeline";
+import { CorrelationEngine } from "./correlation-engine";
+import { CorrelationScoring } from "../../scoring/correlation-scoring";
+import { AlertEngine } from "../../../alerting/alert-engine";
+import { MLAlertEngine } from "../../../alerting/ml-alert-engine";
+import { AlertPipeline } from "../../../alerting/alert-pipeline";
 
 const correlationEngine = new CorrelationEngine();
 const correlationScoring = new CorrelationScoring();

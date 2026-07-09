@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { multiEventPipeline } from "../pipelines/multi-event-pipeline";
+import { multiEventPipeline } from "../correlation/engine/pipeline/multi-event-pipeline";
 import { NormalizedEvent } from "@j3r3mcdev/scoring";
 
 export class MultiEventController {

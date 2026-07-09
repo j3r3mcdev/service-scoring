@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { scoringPipeline } from "../../../../pipelines/scoring-pipeline";
+import { scoringPipeline } from "../scoring-pipeline";
 import {
   NormalizedEvent,
   ScoringResult,

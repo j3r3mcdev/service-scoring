@@ -1,6 +1,6 @@
 import { NormalizedEvent, ScoringResult } from "@j3r3mcdev/scoring";
-import { CorrelationFinding } from "../correlation/correlation-types";
-import { Alert } from "../alerting/alert-types";
+import { CorrelationFinding } from "../../correlation-types";
+import { Alert } from "../../../alerting/alert-types";
 
 /**
  * Résultat du pipeline multi‑événements
