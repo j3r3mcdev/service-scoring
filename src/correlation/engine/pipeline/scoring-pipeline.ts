@@ -6,7 +6,7 @@ import {
   Vulnerability,
 } from "@j3r3mcdev/scoring";
 
-import { CorrelationChain } from "./correlation-types";
+import { CorrelationChain, CorrelationFinding } from "./correlation-types";
 
 import { AlertPipeline } from "../../../alerting/alert-pipeline";
 import { AlertEngine } from "../../../alerting/alert-engine";
@@ -15,10 +15,8 @@ import { ScoringWithAlerts } from "./types";
 
 import { ScoringEngine } from "../../../engine/scoring-engine";
 import { CorrelationEngine } from "./correlation-engine";
-import { CorrelationFinding } from "./correlation-types";
 
-// ⚠️ Correction : ton chemin était faux
-import { computeAttackLikelihood } from "../pipeline/probabilistic-correlation";
+import { computeAttackLikelihood } from "./probabilistic-correlation";
 
 /**
  * Bonus de sévérité pour le score de corrélation avancé.
@@ -80,7 +78,6 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
   const correlationEngine = new CorrelationEngine();
   const rawFindings: CorrelationFinding[] = correlationEngine.run(events);
 
-  // Conversion CorrelationFinding → CorrelationChain
   let chains: CorrelationChain[] = rawFindings.map((f) => {
     const vuln: Vulnerability =
       f.events[0]?.metadata?.findings?.[0]?.vulnerability ?? "http";
@@ -107,7 +104,6 @@ export function scoringPipeline(events: NormalizedEvent[]): ScoringResult {
     };
   });
 
-  // Fallback indispensable pour les tests d’intégration
   if (chains.length === 0) {
     const sources = new Set(events.map((e) => e.source));
 
@@ -144,10 +140,6 @@ export function scoringWithAlerts(
 ): ScoringWithAlerts {
   const scoring = scoringPipeline(events);
   const correlationFindings = convertChainsToFindings(scoring.chains);
-
-  // ─────────────────────────────────────────────────────────────
-  //  FEATURES ML — enrichissement corrélation
-  // ─────────────────────────────────────────────────────────────
 
   const chainCount = scoring.chains.length;
 
@@ -187,7 +179,6 @@ export function scoringWithAlerts(
     score: c.correlationScore ?? 0,
   }));
 
-  // ⚠️ Ajout Phase 8 — Probabilistic ML features
   const attackLikelihoodMax = Math.max(
     ...scoring.chains.map((c) => c.attackLikelihood ?? 0),
   );
@@ -210,8 +201,6 @@ export function scoringWithAlerts(
     attackLikelihoodMax,
     attackLikelihoodAvg,
   };
-
-  // ─────────────────────────────────────────────────────────────
 
   const alerts = alertPipeline.run({
     ip,
