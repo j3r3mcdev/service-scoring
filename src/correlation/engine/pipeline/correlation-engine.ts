@@ -6,6 +6,7 @@ import { EntityRegistry } from "../../multi-ip/entity-registry";
 import { MultiIPCorrelationEngine } from "../../multi-ip/multi-ip-engine";
 import { KillChainEngine } from "../../../killchain/kill-chain-engine";
 import { GraphEngine } from "../../../event-graph/graph-engine";
+import { UEBAEngine } from "../../../ueba/ueba-engine";
 
 export class CorrelationEngine {
   run(events: NormalizedEvent[]): CorrelationFinding[] {
@@ -13,7 +14,9 @@ export class CorrelationEngine {
 
     if (!events.length) return findings;
 
-    // BASIC PATTERNS
+    // ─────────────────────────────────────────────────────────────
+    //  BASIC PATTERNS (phase 1)
+    // ─────────────────────────────────────────────────────────────
     for (const pattern of basicPatterns) {
       if (pattern.detect(events)) {
         findings.push({
@@ -26,7 +29,9 @@ export class CorrelationEngine {
       }
     }
 
-    // ADVANCED PATTERNS
+    // ─────────────────────────────────────────────────────────────
+    //  ADVANCED PATTERNS (phase 2)
+    // ─────────────────────────────────────────────────────────────
     for (const pattern of advancedPatterns) {
       if (pattern.detect(events)) {
         findings.push({
@@ -39,7 +44,9 @@ export class CorrelationEngine {
       }
     }
 
-    // KILL CHAIN (phase 5)
+    // ─────────────────────────────────────────────────────────────
+    //  KILL CHAIN (phase 5)
+    // ─────────────────────────────────────────────────────────────
     const killChainEngine = new KillChainEngine();
     const killChainSteps = killChainEngine.run(findings);
 
@@ -57,7 +64,9 @@ export class CorrelationEngine {
       });
     }
 
-    // MULTI‑IP (phase 4)
+    // ─────────────────────────────────────────────────────────────
+    //  MULTI‑IP (phase 4)
+    // ─────────────────────────────────────────────────────────────
     const registry = new EntityRegistry();
     for (const event of events) {
       registry.add(event);
@@ -66,6 +75,15 @@ export class CorrelationEngine {
     const multiIPEngine = new MultiIPCorrelationEngine();
     const multiIPFindings = multiIPEngine.run(registry);
     findings.push(...multiIPFindings);
+
+    // ─────────────────────────────────────────────────────────────
+    //  UEBA (phase 7) — désactivé pour les gros volumes (perf tests)
+    // ─────────────────────────────────────────────────────────────
+    if (events.length < 10000) {
+      const uebaEngine = new UEBAEngine();
+      const uebaFindings = uebaEngine.run(events);
+      findings.push(...uebaFindings);
+    }
 
     // ─────────────────────────────────────────────────────────────
     //  GRAPHE D'ÉVÉNEMENTS (phase 6)
