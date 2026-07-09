@@ -4,11 +4,11 @@ import { Alert } from "../../../alerting/alert-types";
 
 /**
  * Étend le ScoringResult du package NPM pour utiliser NOTRE CorrelationChain
- * et ajoute la propriété alerts pour scoring-with-alerts.
+ * et garantit que alerts existe toujours.
  */
 export interface ScoringResultExtended extends ScoringResult {
   chains: CorrelationChain[];
-  alerts?: Alert[]; // 🔥 AJOUT INDISPENSABLE
+  alerts: Alert[]; // 🔥 plus optionnel
 }
 
 /**
