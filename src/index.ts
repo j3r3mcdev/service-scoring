@@ -1,16 +1,19 @@
-import { Router } from "express";
-import { ScoringController } from "./api/scoring.controller";
+import express from "express";
+import scoringRoutes from "./api/scoring.controller";
+import multiEventRoutes from "./api/multi-event.routes";
 
-const router = Router();
+const app = express();
+app.use(express.json());
 
-router.post("/score", (req, res) => {
-  const rawIp = req.ip ?? req.headers["x-forwarded-for"] ?? "unknown";
-  const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp;
+app.use("/scoring", scoringRoutes);
+app.use("/scoring", multiEventRoutes);
 
-  const events = req.body?.events ?? [];
-  const result = ScoringController.scoreWithAlerts(ip, events);
-
-  res.json(result);
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true });
 });
 
-export default router;
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  console.log(`Service scoring running on port ${PORT}`);
+});
