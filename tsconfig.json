@@ -12,11 +12,5 @@
     "ignoreDeprecations": "6.0"
   },
   "include": ["src"],
-  "exclude": [
-    "node_modules",
-    "dist",
-
-    // 🔥 Ajout indispensable :
-    "src/pipelines"
-  ]
+  "exclude": ["node_modules", "dist"]
 }
