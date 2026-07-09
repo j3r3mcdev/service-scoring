@@ -1,4 +1,5 @@
-import { CorrelationChain, Vulnerability } from "@j3r3mcdev/scoring";
+import { Vulnerability } from "@j3r3mcdev/scoring";
+import { CorrelationChain } from "./correlation-types";
 
 function baseVulnWeight(vuln: Vulnerability): number {
   switch (vuln) {

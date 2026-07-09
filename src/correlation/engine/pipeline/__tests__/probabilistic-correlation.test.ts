@@ -1,5 +1,5 @@
 import { computeAttackLikelihood } from "../probabilistic-correlation";
-import { CorrelationChain } from "@j3r3mcdev/scoring";
+import { CorrelationChain } from "../correlation-types";
 import { describe, it, expect } from "@jest/globals";
 
 function makeChain(partial: Partial<CorrelationChain>): CorrelationChain {

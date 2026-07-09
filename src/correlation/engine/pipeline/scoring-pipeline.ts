@@ -1,11 +1,12 @@
 import {
   NormalizedEvent,
   ScoringResult,
-  CorrelationChain,
   ScoringContext,
   Severity,
   Vulnerability,
 } from "@j3r3mcdev/scoring";
+
+import { CorrelationChain } from "./correlation-types";
 
 import { AlertPipeline } from "../../../alerting/alert-pipeline";
 import { AlertEngine } from "../../../alerting/alert-engine";
