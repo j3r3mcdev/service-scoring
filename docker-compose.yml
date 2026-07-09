@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        GITHUB_TOKEN: ${GITHUB_TOKEN}
+        NPM_TOKEN: ${NPM_TOKEN}
     container_name: scoring-service
     ports:
       - "${SCORING_PORT}:7777"
@@ -19,7 +19,3 @@ services:
       retries: 3
     networks:
       - scoring-net
-
-networks:
-  scoring-net:
-    driver: bridge

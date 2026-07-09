@@ -50,6 +50,7 @@ export function scoringWithAlerts(
     correlation: correlationFindings,
     scoring,
   });
+  console.log(">>> scoringWithAlerts VERSION CORRIGÉE exécutée");
 
   return {
     ...scoring,
