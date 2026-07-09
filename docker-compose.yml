@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  scoring-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scoring-service
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - scoring-net
+
+networks:
+  scoring-net:
+    driver: bridge
