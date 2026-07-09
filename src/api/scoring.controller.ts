@@ -13,4 +13,13 @@ router.post("/score", (req, res) => {
   res.json(result);
 });
 
+router.post("/debug-score", (req, res) => {
+  res.json({
+    receivedBody: req.body,
+    events: req.body?.events,
+    firstEvent: req.body?.events?.[0],
+    findings: req.body?.events?.[0]?.findings,
+  });
+});
+
 export default router;
